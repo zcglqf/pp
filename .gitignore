@@ -1,0 +1,9 @@
+# Ignore build directories
+/.*/
+/out/
+/temp/
+/thirdparties/
+/Testing/
+/bin/
+/tst/Testing/
+/*.log
