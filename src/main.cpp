@@ -25,28 +25,31 @@ int main(int argc, char* argv[])
     if (argc < 5)
     {
         std::cerr << "Usage: " << argv[0]
-            << " <FixedImage> <MovingImage> <MovingLabel> <OutputTransformedLabel>"
+            << " <AtlasImage> <TargetImage> <AtlasLabel> <OutputTransformedLabel>"
             << std::endl;
         return EXIT_FAILURE;
     }
 
-    const char* fixedImageFileName = argv[1];
-    const char* movingImageFileName = argv[2];
-    const char* movingLabelFileName = argv[3];
+    std::cout << "Press any key to continue:";
+    std::cin.get();
+
+    const char* atlasImageFileName = argv[1];
+    const char* targetImageFileName = argv[2];
+    const char* atlasLabelFileName = argv[3];
     const char* outputTransformedLabelFileName = argv[4];
 
-    // Read the fixed and moving images
-    ReaderType::Pointer fixedImageReader = ReaderType::New();
-    fixedImageReader->SetFileName(fixedImageFileName);
-    fixedImageReader->Update();
+    // Read the atlas (fixed) and target (moving) images
+    ReaderType::Pointer atlasImageReader = ReaderType::New();
+    atlasImageReader->SetFileName(atlasImageFileName);
+    atlasImageReader->Update();
 
-    ReaderType::Pointer movingImageReader = ReaderType::New();
-    movingImageReader->SetFileName(movingImageFileName);
-    movingImageReader->Update();
+    ReaderType::Pointer targetImageReader = ReaderType::New();
+    targetImageReader->SetFileName(targetImageFileName);
+    targetImageReader->Update();
 
-    ReaderType::Pointer movingLabelReader = ReaderType::New();
-    movingLabelReader->SetFileName(movingLabelFileName);
-    movingLabelReader->Update();
+    ReaderType::Pointer atlasLabelReader = ReaderType::New();
+    atlasLabelReader->SetFileName(atlasLabelFileName);
+    atlasLabelReader->Update();
 
     // Set up the registration
     RegistrationType::Pointer registration = RegistrationType::New();
@@ -56,8 +59,8 @@ int main(int argc, char* argv[])
 
     registration->SetMetric(metric);
     registration->SetOptimizer(optimizer);
-    registration->SetFixedImage(fixedImageReader->GetOutput());
-    registration->SetMovingImage(movingImageReader->GetOutput());
+    registration->SetFixedImage(atlasImageReader->GetOutput());  // Atlas image as fixed
+    registration->SetMovingImage(targetImageReader->GetOutput());  // Target image as moving
     registration->SetInitialTransform(transform);
     registration->InPlaceOn();
 
@@ -80,13 +83,13 @@ int main(int argc, char* argv[])
     // Get the final transform
     TransformType::ConstPointer finalTransform = registration->GetTransform();
 
-    // Resample the moving label image
+    // Resample the atlas label image to match the target image space
     using ResampleFilterType = itk::ResampleImageFilter<ImageType, ImageType>;
     ResampleFilterType::Pointer resampler = ResampleFilterType::New();
-    resampler->SetInput(movingLabelReader->GetOutput());
+    resampler->SetInput(atlasLabelReader->GetOutput());
     resampler->SetTransform(finalTransform);
     resampler->SetUseReferenceImage(true);
-    resampler->SetReferenceImage(fixedImageReader->GetOutput());
+    resampler->SetReferenceImage(atlasImageReader->GetOutput());
     resampler->SetInterpolator(itk::NearestNeighborInterpolateImageFunction<ImageType, double>::New());
     resampler->Update();
 
