@@ -10,7 +10,7 @@
 #include "itkLBFGSBOptimizerv4.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
-
+#include "itkMinimumMaximumImageFilter.h"
 
 
 #include "itkResampleImageFilter.h"
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     std::cout << "Press any key to continue:";
     std::cin.get();
 
-    constexpr unsigned int ImageDimension = 3;
+    constexpr unsigned int ImageDimension = 2;
     using PixelType = float;
 
     using FixedImageType = itk::Image<PixelType, ImageDimension>;
@@ -91,14 +91,38 @@ int main(int argc, char* argv[])
     FixedImageType::RegionType   fixedRegion = fixedImage->GetBufferedRegion();
 
     // Debug only
-    FixedImageType::IndexType pixelIndexFixed;
-    pixelIndexFixed[0] = 100;
-    pixelIndexFixed[1] = 100;
-    pixelIndexFixed[2] = 100;
-    PixelType pixelValueFixed = fixedImage->GetPixel(pixelIndexFixed);
-    std::cout << "Fixed image file name: " << fixedImageReader->GetFileName() << std::endl;
-    std::cout << "Fixed image pixel Value at [100, 100, 100] is " << pixelValueFixed << std::endl;
-    std::cout << " Origin at " << fixedImage->GetOrigin() << std::endl;
+    using MinMaxFilterType = itk::MinimumMaximumImageFilter<FixedImageType>;
+    MinMaxFilterType::Pointer minMaxFilter = MinMaxFilterType::New();
+    minMaxFilter->SetInput(fixedImageReader->GetOutput());
+    minMaxFilter->Update();
+
+    PixelType minimumValue = minMaxFilter->GetMinimum();
+    PixelType maximumValue = minMaxFilter->GetMaximum();
+
+    // Step 2: Extract image properties
+    FixedImageType::PointType originFixed = fixedImage->GetOrigin();
+    FixedImageType::SpacingType spacingFixed = fixedImage->GetSpacing();
+    FixedImageType::SizeType sizeFixed = fixedImage->GetLargestPossibleRegion().GetSize();
+
+    // Step 3: Compute the coverage of the image plane in real-world coordinates
+    FixedImageType::PointType coverageStartFixed = originFixed;
+    FixedImageType::PointType coverageEndFixed;
+
+    for (unsigned int i = 0; i < ImageDimension; ++i)
+    {
+        coverageEndFixed[i] = originFixed[i] + spacingFixed[i] * (sizeFixed[i] - 1);
+    }
+
+    // Output the results
+    std::cout << "Image Origin: " << originFixed << std::endl;
+    std::cout << "Image Spacing: " << spacingFixed << std::endl;
+    std::cout << "Image Size: " << sizeFixed << std::endl;
+    std::cout << "Image Coverage in Real-World Coordinates:" << std::endl;
+    std::cout << "  Start: " << coverageStartFixed << std::endl;
+    std::cout << "  End:   " << coverageEndFixed << std::endl;
+    std::cout << "  Image size: " << coverageEndFixed - coverageStartFixed << std::endl;
+    std::cout << "  Minimum Value: " << minimumValue << std::endl;
+    std::cout << "  Maximum Value: " << maximumValue << std::endl;
     // Debug only
    
     // read moving [or reference] image
@@ -107,21 +131,45 @@ int main(int argc, char* argv[])
     movingImageReader->SetFileName(argv[2]);
     movingImageReader->Update();
     MovingImageType::ConstPointer movingImage = movingImageReader->GetOutput();
-    // Debug only
-    FixedImageType::IndexType pixelIndexMoving;
-    pixelIndexMoving[0] = 100;
-    pixelIndexMoving[1] = 100;
-    pixelIndexMoving[2] = 100;
-    PixelType pixelValueMoving = movingImage->GetPixel(pixelIndexMoving);
-    std::cout << "Fixed image file name: " << movingImageReader->GetFileName() << std::endl;
-    std::cout << "Fixed image pixel Value at [100, 100, 100] is " << pixelValueMoving << std::endl;
-    std::cout << " Origin at " << movingImage->GetOrigin() << std::endl;
-    // Debug only
 
+    // Debug only
+    //using MinMaxFilterType = itk::MinimumMaximumImageFilter<FixedImageType>;
+    //MinMaxFilterType::Pointer minMaxFilter = MinMaxFilterType::New();
+    minMaxFilter->SetInput(movingImage);
+    minMaxFilter->Update();
+
+    minimumValue = minMaxFilter->GetMinimum();
+    maximumValue = minMaxFilter->GetMaximum();
+
+    // Step 2: Extract image properties
+    MovingImageType::PointType originMoving = movingImage->GetOrigin();
+    MovingImageType::SpacingType spacingMoving = movingImage->GetSpacing();
+    MovingImageType::SizeType sizeMoving = movingImage->GetLargestPossibleRegion().GetSize();
+
+    // Step 3: Compute the coverage of the image plane in real-world coordinates
+    MovingImageType::PointType coverageStartMoving = originMoving;
+    MovingImageType::PointType coverageEndMoving;
+
+    for (unsigned int i = 0; i < ImageDimension; ++i)
+    {
+        coverageEndMoving[i] = originMoving[i] + spacingMoving[i] * (sizeMoving[i] - 1);
+    }
+
+    // Output the results
+    std::cout << "Image Origin: " << originMoving << std::endl;
+    std::cout << "Image Spacing: " << spacingMoving << std::endl;
+    std::cout << "Image Size: " << sizeMoving << std::endl;
+    std::cout << "Image Coverage in Real-World Coordinates:" << std::endl;
+    std::cout << "  Start: " << coverageStartMoving << std::endl;
+    std::cout << "  End:   " << coverageEndMoving << std::endl;
+    std::cout << "  Image size: " << coverageEndMoving - coverageStartMoving << std::endl;
+    std::cout << "  Minimum Value: " << minimumValue << std::endl;
+    std::cout << "  Maximum Value: " << maximumValue << std::endl;
+    // Debug only
 
     const unsigned int     SpaceDimension = ImageDimension;
     constexpr unsigned int SplineOrder = 3;
-    using CoordinateRepType = double;
+    using CoordinateRepType = float;
 
     using TransformType =
         itk::BSplineTransform<CoordinateRepType, SpaceDimension, SplineOrder>;
