@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
 
     const unsigned int     SpaceDimension = ImageDimension;
     constexpr unsigned int SplineOrder = 3;
-    using CoordinateRepType = float;
+    using CoordinateRepType = double;
 
     using TransformType =
         itk::BSplineTransform<CoordinateRepType, SpaceDimension, SplineOrder>;
