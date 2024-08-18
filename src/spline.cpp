@@ -16,7 +16,13 @@
 #include "itkResampleImageFilter.h"
 #include "itkCastImageFilter.h"
 #include "itkSquaredDifferenceImageFilter.h"
+#define DEBUG true
 
+// Test data: 
+//     fixed image: RARE64.nii
+//     moving image: AtlasHead64.nii
+//     output name : whatevername.nii
+//     command: argv[0]  fullPathOfRARE64.nii fullPathOfAtlasHead64.nii fullPathOfwhatevername.nii
 //  The following section of code implements a Command observer
 //  used to monitor the evolution of the registration process.
 //
@@ -79,102 +85,117 @@ int main(int argc, char* argv[])
     constexpr unsigned int ImageDimension = 2;
     using PixelType = float;
 
-    using FixedImageType = itk::Image<PixelType, ImageDimension>;
-    using MovingImageType = itk::Image<PixelType, ImageDimension>;
+    using ImageType = itk::Image<PixelType, ImageDimension>;
 
     // read fixed [or target] image (I suppose mri image is the fixed )
-    using FixedImageReaderType = itk::ImageFileReader<FixedImageType>;
+    using FixedImageReaderType = itk::ImageFileReader<ImageType>;
     auto fixedImageReader = FixedImageReaderType::New();
     fixedImageReader->SetFileName(argv[1]);
     fixedImageReader->Update();
-    FixedImageType::ConstPointer fixedImage = fixedImageReader->GetOutput();
-    FixedImageType::RegionType   fixedRegion = fixedImage->GetBufferedRegion();
-
-    // Debug only
-    using MinMaxFilterType = itk::MinimumMaximumImageFilter<FixedImageType>;
-    MinMaxFilterType::Pointer minMaxFilter = MinMaxFilterType::New();
-    minMaxFilter->SetInput(fixedImageReader->GetOutput());
-    minMaxFilter->Update();
-
-    PixelType minimumValue = minMaxFilter->GetMinimum();
-    PixelType maximumValue = minMaxFilter->GetMaximum();
-
-    // Step 2: Extract image properties
-    FixedImageType::PointType originFixed = fixedImage->GetOrigin();
-    FixedImageType::SpacingType spacingFixed = fixedImage->GetSpacing();
-    FixedImageType::SizeType sizeFixed = fixedImage->GetLargestPossibleRegion().GetSize();
-
-    // Step 3: Compute the coverage of the image plane in real-world coordinates
-    FixedImageType::PointType coverageStartFixed = originFixed;
-    FixedImageType::PointType coverageEndFixed;
-
-    for (unsigned int i = 0; i < ImageDimension; ++i)
-    {
-        coverageEndFixed[i] = originFixed[i] + spacingFixed[i] * (sizeFixed[i] - 1);
-    }
-
-    // Output the results
-    std::cout << "Image Origin: " << originFixed << std::endl;
-    std::cout << "Image Spacing: " << spacingFixed << std::endl;
-    std::cout << "Image Size: " << sizeFixed << std::endl;
-    std::cout << "Image Coverage in Real-World Coordinates:" << std::endl;
-    std::cout << "  Start: " << coverageStartFixed << std::endl;
-    std::cout << "  End:   " << coverageEndFixed << std::endl;
-    std::cout << "  Image size: " << coverageEndFixed - coverageStartFixed << std::endl;
-    std::cout << "  Minimum Value: " << minimumValue << std::endl;
-    std::cout << "  Maximum Value: " << maximumValue << std::endl;
-    // Debug only
+    ImageType::ConstPointer fixedImage = fixedImageReader->GetOutput();
+    ImageType::RegionType   fixedRegion = fixedImage->GetBufferedRegion();
    
     // read moving [or reference] image
-    using MovingImageReaderType = itk::ImageFileReader<MovingImageType>;
+    using MovingImageReaderType = itk::ImageFileReader<ImageType>;
     auto movingImageReader = MovingImageReaderType::New();
     movingImageReader->SetFileName(argv[2]);
     movingImageReader->Update();
-    MovingImageType::ConstPointer movingImage = movingImageReader->GetOutput();
+    ImageType::ConstPointer movingImage = movingImageReader->GetOutput();
 
-    // Debug only
-    //using MinMaxFilterType = itk::MinimumMaximumImageFilter<FixedImageType>;
-    //MinMaxFilterType::Pointer minMaxFilter = MinMaxFilterType::New();
-    minMaxFilter->SetInput(movingImage);
-    minMaxFilter->Update();
+    ///////////// Debug only
+    if (DEBUG)
+	{		
+		/////////// Debug only
+		using MinMaxFilterType = itk::MinimumMaximumImageFilter<ImageType>;
+		MinMaxFilterType::Pointer minMaxFilter = MinMaxFilterType::New();
+		minMaxFilter->SetInput(fixedImageReader->GetOutput());
+		minMaxFilter->Update();
 
-    minimumValue = minMaxFilter->GetMinimum();
-    maximumValue = minMaxFilter->GetMaximum();
+		PixelType minimumValue = minMaxFilter->GetMinimum();
+		PixelType maximumValue = minMaxFilter->GetMaximum();
 
-    // Step 2: Extract image properties
-    MovingImageType::PointType originMoving = movingImage->GetOrigin();
-    MovingImageType::SpacingType spacingMoving = movingImage->GetSpacing();
-    MovingImageType::SizeType sizeMoving = movingImage->GetLargestPossibleRegion().GetSize();
+		// Step 2: Extract image properties
+		ImageType::PointType originFixed = fixedImage->GetOrigin();
+		ImageType::SpacingType spacingFixed = fixedImage->GetSpacing();
+		ImageType::SizeType sizeFixed = fixedImage->GetLargestPossibleRegion().GetSize();
 
-    // Step 3: Compute the coverage of the image plane in real-world coordinates
-    MovingImageType::PointType coverageStartMoving = originMoving;
-    MovingImageType::PointType coverageEndMoving;
+		// Step 3: Compute the coverage of the image plane in real-world coordinates
+		ImageType::PointType coverageStartFixed = originFixed;
+		ImageType::PointType coverageEndFixed;
 
-    for (unsigned int i = 0; i < ImageDimension; ++i)
-    {
-        coverageEndMoving[i] = originMoving[i] + spacingMoving[i] * (sizeMoving[i] - 1);
-    }
+		for (unsigned int i = 0; i < ImageDimension; ++i)
+		{
+			coverageEndFixed[i] = originFixed[i] + spacingFixed[i] * (sizeFixed[i] - 1);
+		}
 
-    // Output the results
-    std::cout << "Image Origin: " << originMoving << std::endl;
-    std::cout << "Image Spacing: " << spacingMoving << std::endl;
-    std::cout << "Image Size: " << sizeMoving << std::endl;
-    std::cout << "Image Coverage in Real-World Coordinates:" << std::endl;
-    std::cout << "  Start: " << coverageStartMoving << std::endl;
-    std::cout << "  End:   " << coverageEndMoving << std::endl;
-    std::cout << "  Image size: " << coverageEndMoving - coverageStartMoving << std::endl;
-    std::cout << "  Minimum Value: " << minimumValue << std::endl;
-    std::cout << "  Maximum Value: " << maximumValue << std::endl;
-    // Debug only
+		// Output the results
+		std::cout << "Image Origin: " << originFixed << std::endl;
+		std::cout << "Image Spacing: " << spacingFixed << std::endl;
+		std::cout << "Image Size: " << sizeFixed << std::endl;
+		std::cout << "Image Coverage in Real-World Coordinates:" << std::endl;
+		std::cout << "  Start: " << coverageStartFixed << std::endl;
+		std::cout << "  End:   " << coverageEndFixed << std::endl;
+		std::cout << "  Image size: " << coverageEndFixed - coverageStartFixed << std::endl;
+		std::cout << "  Minimum Value: " << minimumValue << std::endl;
+		std::cout << "  Maximum Value: " << maximumValue << std::endl;
+
+		//using MinMaxFilterType = itk::MinimumMaximumImageFilter<ImageType>;
+		//MinMaxFilterType::Pointer minMaxFilter = MinMaxFilterType::New();
+		minMaxFilter->SetInput(movingImage);
+		minMaxFilter->Update();
+
+		minimumValue = minMaxFilter->GetMinimum();
+		maximumValue = minMaxFilter->GetMaximum();
+
+		// Step 2: Extract image properties
+		ImageType::PointType originMoving = movingImage->GetOrigin();
+		ImageType::SpacingType spacingMoving = movingImage->GetSpacing();
+		ImageType::SizeType sizeMoving = movingImage->GetLargestPossibleRegion().GetSize();
+
+		// Step 3: Compute the coverage of the image plane in real-world coordinates
+		ImageType::PointType coverageStartMoving = originMoving;
+		ImageType::PointType coverageEndMoving;
+
+		for (unsigned int i = 0; i < ImageDimension; ++i)
+		{
+			coverageEndMoving[i] = originMoving[i] + spacingMoving[i] * (sizeMoving[i] - 1);
+		}
+
+		// Output the results
+		std::cout << "Image Origin: " << originMoving << std::endl;
+		std::cout << "Image Spacing: " << spacingMoving << std::endl;
+		std::cout << "Image Size: " << sizeMoving << std::endl;
+		std::cout << "Image Coverage in Real-World Coordinates:" << std::endl;
+		std::cout << "  Start: " << coverageStartMoving << std::endl;
+		std::cout << "  End:   " << coverageEndMoving << std::endl;
+		std::cout << "  Image size: " << coverageEndMoving - coverageStartMoving << std::endl;
+		std::cout << "  Minimum Value: " << minimumValue << std::endl;
+		std::cout << "  Maximum Value: " << maximumValue << std::endl;
+
+		/////////////// Debug only
+	}
+
+    ///////////////////////////////////////////////////////////////////////////////////
+    // Gauss smoothing
+    ///////////////////////////////////////////////////////////////////////////////////
+    using SmoothingFilterType = itk::SmoothingRecursiveGaussianImageFilter<ImageType, ImageType>;
+    SmoothingFilterType::Pointer smoothingFilter = SmoothingFilterType::New();
+    smoothingFilter->SetInput(fixedImage);
+
+    // Set the standard deviation (sigma) for the Gaussian kernel
+    smoothingFilter->SetSigma(0.5);  // Adjust the sigma value as needed
+    smoothingFilter->Update();
+    // using WriterType = itk::ImageFileWriter<OutputImageType>;
+    /// Gasss smoothing
 
     const unsigned int     SpaceDimension = ImageDimension;
-    constexpr unsigned int SplineOrder = 3;
+    constexpr unsigned int SplineOrder = 1;
     using CoordinateRepType = double;
 
     using TransformType =
         itk::BSplineTransform<CoordinateRepType, SpaceDimension, SplineOrder>;
     using RegistrationType =
-        itk::ImageRegistrationMethodv4<FixedImageType, MovingImageType>;
+        itk::ImageRegistrationMethodv4<ImageType, ImageType>;
     auto registration = RegistrationType::New();
     auto transform = TransformType::New();
     unsigned int numberOfGridNodesInOneDimension = 7;
@@ -198,6 +219,9 @@ int main(int argc, char* argv[])
             static_cast<double>(
                 fixedImage->GetLargestPossibleRegion().GetSize()[i] - 1);
     }
+    std::cout << "Fixed image spatial diensions: " << fixedPhysicalDimensions;
+    std::cout << std::endl;
+
     meshSize.Fill(numberOfGridNodesInOneDimension - SplineOrder);
 
     transform->SetTransformDomainOrigin(fixedOrigin);
@@ -220,8 +244,8 @@ int main(int argc, char* argv[])
     //  Software Guide : EndCodeSnippet
 
     using MetricType =
-        itk::MattesMutualInformationImageToImageMetricv4<FixedImageType,
-        MovingImageType>;
+        itk::MattesMutualInformationImageToImageMetricv4<ImageType,
+        ImageType>;
     auto metric = MetricType::New();
     metric->SetNumberOfHistogramBins(32);
     metric->SetUseMovingImageGradientFilter(false);
@@ -247,9 +271,9 @@ int main(int argc, char* argv[])
 
     optimizer->SetCostFunctionConvergenceFactor(1.e7);
     optimizer->SetGradientConvergenceTolerance(1e-35);
-    optimizer->SetNumberOfIterations(200);
-    optimizer->SetMaximumNumberOfFunctionEvaluations(200);
-    optimizer->SetMaximumNumberOfCorrections(7);
+    optimizer->SetNumberOfIterations(20);
+    optimizer->SetMaximumNumberOfFunctionEvaluations(20);
+    optimizer->SetMaximumNumberOfCorrections(3);
     // Software Guide : EndCodeSnippet
 
     // Create the Command observer and register it with the optimizer.
@@ -325,7 +349,7 @@ int main(int argc, char* argv[])
     memorymeter.Report(std::cout);
 
     using ResampleFilterType =
-        itk::ResampleImageFilter<MovingImageType, FixedImageType>;
+        itk::ResampleImageFilter<ImageType, ImageType>;
 
     auto resample = ResampleFilterType::New();
 
@@ -343,12 +367,12 @@ int main(int argc, char* argv[])
     // such as 100 or 128.
     resample->SetDefaultPixelValue(0);
 
-    using OutputPixelType = unsigned char;
+    using OutputPixelType = float;
 
     using OutputImageType = itk::Image<OutputPixelType, ImageDimension>;
 
     using CastFilterType =
-        itk::CastImageFilter<FixedImageType, OutputImageType>;
+        itk::CastImageFilter<ImageType, OutputImageType>;
 
     using WriterType = itk::ImageFileWriter<OutputImageType>;
 
@@ -376,8 +400,8 @@ int main(int argc, char* argv[])
     }
 
     using DifferenceFilterType =
-        itk::SquaredDifferenceImageFilter<FixedImageType,
-        FixedImageType,
+        itk::SquaredDifferenceImageFilter<ImageType,
+        ImageType,
         OutputImageType>;
 
     auto difference = DifferenceFilterType::New();

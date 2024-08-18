@@ -12,15 +12,6 @@ include (${CMAKE_CURRENT_LIST_DIR}/cmake/config.cmake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-SET(SOURCE_FILES
-    ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp   
-)
-
-SET(INCLUDE_FILES 
-
-)
-
-
 list(APPEND REQUIRED_FEATURES 
     cxx_std_20
 )
@@ -45,7 +36,7 @@ include(${ITK_USE_FILE})
 set(PROJECT_SOVERSION 0)
 
 SET(SOURCE_FILES 
-    ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/spline.cpp
 )
 
 SET(INCLUDE_FILES
