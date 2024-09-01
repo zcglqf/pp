@@ -33,6 +33,17 @@ endif()
 
 include(${ITK_USE_FILE})
 
+set(CMAKE_SKIP_BUILD_RPATH TRUE)
+# Note that shared libraries are install into /lib or /bin directory for linux or windows. 
+set(ITK_LIBRARY_PATH "${CMAKE_CURRENT_LIST_DIR}/thirdparties/itk/$<IF:$<BOOL:${WIN32}>,bin,lib>/")
+set(ENV{LD_LIBRARY_PATH} "${ITK_LIBRARY_PATH}:$ENV{LD_LIBRARY_PATH}")
+# Specifies the runtime search path (rpath) for the executable. Multiple paths are supported.
+set(CMAKE_INSTALL_RPATH ${ITK_LIBRARY_PATH})
+# Build into the rpath into the executable, to avoid the library not found error when you run it.
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+# Automatically adds directories that contain libraries linked to the executable to the rpath
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+
 set(PROJECT_SOVERSION 0)
 
 SET(SOURCE_FILES 
@@ -53,6 +64,12 @@ set_target_properties(AtlasSeg PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_SOVERSION}
 )
+# set_target_properties(AtlasSeg PROPERTIES
+#     INSTALL_RPATH ${ITK_LIBRARY_PATH}
+#     BUILD_WITH_INSTALL_RPATH TRUE
+# )
+
+
 
 target_compile_features(AtlasSeg PUBLIC ${REQUIRED_FEATURES})
 
@@ -82,19 +99,19 @@ if(MSVC)
 endif()
 
 
-
-
 install(TARGETS AtlasSeg
     RUNTIME_DEPENDENCIES
-    DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}/thirdparties/itk/bin
+    DIRECTORIES ${ITK_LIBRARY_PATH}
     PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
     POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # dll
+    RUNTIME DESTINATION "$<IF:$<BOOL:${WIN32}>,bin,bin>" # dll
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} # shared libraries but not dll (not useful)
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # mrobjects_static.lib
     OBJECTS DESTINATION ${CMAKE_INSTALL_LIBDIR} # installation for object files *.obj
     COMPONENT Runtime
 )
+
+
 
 
 enable_testing()
