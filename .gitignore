@@ -1,5 +1,4 @@
 # Ignore build directories
-/.*/
 /out/
 /temp/
 /thirdparties/
