@@ -2,6 +2,49 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Configure Linux Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--preset", "linux-debug"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": ["$gcc"],
+            "details": "Configures the project using linux debug preset."
+        },
+        {
+            "label": "Configure Linux Debug for Super Build",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--preset", "linux-debug-superbuild"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": ["$gcc"],
+            "details": "Configures the project to be prepared for a super build (third parties) using linux debug preset."
+        },
+        {
+            "label": "Build Linux Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build", "",
+                "--preset", "linux-debug"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": ["$gcc"],
+            "details": "Builds the project using linux debug preset."
+        },        
+        {
             "type": "shell",
             "label": "My Taks",
             "command": "/usr/bin/g++",

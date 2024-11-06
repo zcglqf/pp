@@ -41,13 +41,28 @@
             "name": "linux-debug",
             "displayName": "Linux Debug",
             "generator": "Unix Makefiles",
-            "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++, generator = default",
+            "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++, generator = default, BUILD_THIRD_PARTIES==OFF",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/bin/gcc",
                 "CMAKE_CXX_COMPILER": "/usr/bin/g++",
-                "CMAKE_BUILD_TYPE": "Debug"
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BUILD_THIRD_PARTIES": "OFF"
+            }
+        },
+        {
+            "name": "linux-debug-superbuild",
+            "displayName": "Linux Debug Superbuild",
+            "generator": "Unix Makefiles",
+            "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++, generator = default, BUILD_THIRD_PARTIES==ON",
+            "binaryDir": "${sourceDir}/out/build/linux-debug",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/linux-debug",
+                "CMAKE_C_COMPILER": "/usr/bin/gcc",
+                "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BUILD_THIRD_PARTIES": "ON"
             }
         }
     ],
@@ -58,6 +73,12 @@
             "displayName": "",
             "configurePreset": "linux-debug"
         },
+        {
+            "name": "linux-debug-superbuild",
+            "description": "",
+            "displayName": "",
+            "configurePreset": "linux-debug-superbuild"
+        },        
         {
             "name": "x64-debug",
             "description": "",
