@@ -47,11 +47,8 @@ DASH = filesep;
 
 % USER SELECTS FILE WITH GROUPS
 % pathname='/scratch/gharagouzloo/imaginostics/TBI/DATA_extracted/PatientData/R10patientdata';
-if  ~exist('pathname','var')
-    [pathname] = uigetfile_n_dir();
-end
-pathname=char(pathname);
 
+pathname = uigetdir('/media/czhao/WD_BLACK/Imaginostics/F12');
 
 % GET NUMBER OF REGIONS
 
